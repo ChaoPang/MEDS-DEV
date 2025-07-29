@@ -1,0 +1,40 @@
+metadata:
+  description: >-
+    This file specifies the base configuration for the prediction of in hospital mortality.
+  links: []
+  contacts:
+    - name: "Chao Pang"
+      github_username: "ChaoPang"
+  supported_datasets:
+    - MIMIC-IV
+
+predicates:
+  hospital_admission: ???
+  hospital_discharge: ???
+  death:
+    code: { regex: "MEDS_DEATH.*" }
+  discharge_or_death:
+    expr: or(hospital_discharge, death)
+
+trigger: hospital_admission
+
+windows:
+  input:
+    start: null
+    end: trigger + 48h
+    start_inclusive: True
+    end_inclusive: True
+    index_timestamp: end
+  gap:
+    start: trigger
+    end: start + 48h
+    start_inclusive: False
+    end_inclusive: True
+    has:
+      discharge_or_death: (None, 0)
+  target:
+    start: gap.end
+    end: start -> discharge_or_death
+    start_inclusive: False
+    end_inclusive: True
+    label: death
